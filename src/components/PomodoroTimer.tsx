@@ -12,9 +12,11 @@ interface TimerSettings {
 
 export default function PomodoroTimer() {
   const [mode, setMode] = useState<TimerMode>('work')
+  const [selectedDuration, setSelectedDuration] = useState(25)
   const [timeLeft, setTimeLeft] = useState(25 * 60) // 25 minutes in seconds
   const [isRunning, setIsRunning] = useState(false)
   const [pomodoroCount, setPomodoroCount] = useState(0)
+  const [totalTime, setTotalTime] = useState(0) // 累積時間（分）
   const [isSettings, setIsSettings] = useState(false)
   const [settings, setSettings] = useState<TimerSettings>({
     work: 25,
@@ -27,7 +29,7 @@ export default function PomodoroTimer() {
 
   const modeSettings = {
     work: { 
-      duration: settings.work * 60, 
+      duration: mode === 'work' ? selectedDuration * 60 : settings.work * 60, 
       label: '作業時間',
       color: 'bg-red-500',
       bgGradient: 'from-red-400 to-red-600'
@@ -49,7 +51,7 @@ export default function PomodoroTimer() {
   useEffect(() => {
     setTimeLeft(modeSettings[mode].duration)
     setIsRunning(false)
-  }, [mode, settings])
+  }, [mode, settings, selectedDuration])
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
@@ -80,6 +82,7 @@ export default function PomodoroTimer() {
     if (mode === 'work') {
       const newCount = pomodoroCount + 1
       setPomodoroCount(newCount)
+      setTotalTime(prev => prev + selectedDuration)
       
       if (newCount % 4 === 0) {
         setMode('longBreak')
@@ -200,6 +203,28 @@ export default function PomodoroTimer() {
           </button>
         </div>
 
+        {/* Duration Selection (only show for work mode) */}
+        {mode === 'work' && (
+          <div className="mb-6">
+            <div className="text-white/80 text-sm font-medium mb-3 text-center">作業時間を選択</div>
+            <div className="flex justify-center space-x-3">
+              {[10, 25, 50].map((duration) => (
+                <button
+                  key={duration}
+                  onClick={() => setSelectedDuration(duration)}
+                  className={`py-2 px-4 rounded-xl text-sm font-medium transition-all ${
+                    selectedDuration === duration
+                      ? 'bg-white text-gray-800 shadow-lg'
+                      : 'bg-white/10 text-white/70 hover:text-white hover:bg-white/20'
+                  }`}
+                >
+                  {duration}分
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Mode Tabs */}
         <div className="flex rounded-2xl bg-white/10 p-1 mb-8">
           {(Object.keys(modeSettings) as TimerMode[]).map((modeKey) => (
@@ -289,9 +314,12 @@ export default function PomodoroTimer() {
         </div>
 
         {/* Stats */}
-        <div className="text-center">
+        <div className="text-center space-y-2">
           <div className="text-white/80 text-sm">
             完了したポモドーロ: <span className="font-bold text-white">{pomodoroCount}</span>
+          </div>
+          <div className="text-white/80 text-sm">
+            累積時間: <span className="font-bold text-white">{totalTime}分</span>
           </div>
         </div>
 
